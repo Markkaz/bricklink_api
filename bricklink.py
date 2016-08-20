@@ -12,8 +12,9 @@ class BricklinkException(Exception):
         return "%d - %s: %s" % (self.code, self.message, self.description)
 
 class CatelogItem(object):
-    def __init__(self, no, name, type, category_id, image_url, thumbnail_url, weight, dim_x, dim_y, dim_z,
-                 year_released, is_obsolete, alternate_no = None, description = None, language_code = None):
+    def __init__(self, no, type, name = None, category_id = None, image_url = None, thumbnail_url = None,
+                 weight = None, dim_x = None, dim_y = None, dim_z = None, year_released = None,
+                 is_obsolete = False, alternate_no = None, description = None, language_code = None):
         self.no = no
         self.name = name
         self.type = type
@@ -36,6 +37,13 @@ class CatelogItem(object):
 class BricklinkApi(object):
     BRICKLINK_URL = "https://api.bricklink.com/api/store/v1"
 
+    def _perform_get_request(self, url):
+        response = requests.get(url, auth=self._oauth).json()
+        if response['meta']['code'] != 200:
+            raise BricklinkException(**response['meta'])
+        data = response['data']
+        return data
+
     def __init__(self, oauth_consumer_key, oauth_consumer_secret,
                  oauth_access_token, oauth_access_token_secret):
         self._oauth = OAuth1(
@@ -46,10 +54,11 @@ class BricklinkApi(object):
         )
 
     def getCatelogItem(self, type, no):
-        url = self.BRICKLINK_URL + "/items/%s/%s" % (type, no)
-        response = requests.get(url, auth=self._oauth).json()
+        data = self._perform_get_request(
+            self.BRICKLINK_URL + "/items/%s/%s" % (type, no))
+        return CatelogItem(**data)
 
-        if response['meta']['code'] != 200:
-            raise BricklinkException(**response['meta'])
-
-        return CatelogItem(**response['data'])
+    def getCatelogItemImage(self, type, no, color_id):
+        data = self._perform_get_request(
+            self.BRICKLINK_URL + "/items/%s/%s/images/%s" % (type, no, color_id))
+        return CatelogItem(**data)
