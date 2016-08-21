@@ -11,88 +11,12 @@ class BricklinkException(Exception):
     def __str__(self):
         return "%d - %s: %s" % (self.code, self.message, self.description)
 
-class CatelogItem(object):
-    def __init__(self, no, type, color_id = None, name = None, category_id = None, image_url = None, thumbnail_url = None,
-                 weight = None, dim_x = None, dim_y = None, dim_z = None, year_released = None,
-                 is_obsolete = False, alternate_no = None, description = None, language_code = None):
-        self.no = no
-        self.name = name
-        self.type = type
-        self.color_id = color_id
-        self.catelog_id = category_id
-        self.alternate_no = alternate_no
-        self.image_url = image_url
-        self.thumbnail_url = thumbnail_url
-        self.weight = weight
-        self.dim_x = dim_x
-        self.dim_y = dim_y
-        self.dim_z = dim_z
-        self.year_released = year_released
-        self.description = description
-        self.is_obsolete = is_obsolete
-        self.language_code = language_code
-
-    def __str__(self):
-        return "%s %s - %s" % (self.type, self.no, self.name)
-
-class CatelogSuperSet(object):
-    def __init__(self, quantity, appears_as, item, color_id):
-        self.quantity = quantity,
-        self.appears_as = appears_as
-        self.item = CatelogItem(color_id = color_id, **item)
-
-    def __str__(self):
-        return "%s %s %s" % (str(self.quantity), self.appears_as, self.item)
-
-class CatelogSuperSetEntries(object):
-    def __init__(self, entries):
-        self._entries = entries['entries']
-        self._color_id = entries['color_id']
-
-    def __len__(self):
-        return len(self._entries)
-
-    def __getitem__(self, key):
-        return CatelogSuperSet(color_id = self._color_id, **self._entries[key])
-
-class CatelogSupersetEntriesList(object):
-    def __init__(self, items):
-        self._items = items
-
-    def __len__(self):
-        return len(self._items)
-
-    def __getitem__(self, key):
-        return CatelogSuperSetEntries(self._items[key])
-
-class CatelogSubsetEntries(object):
-    def __init__(self, entries):
-        self._entries = []
-        for entry in entries:
-            self._entries += entry['entries']
-
-    def __len__(self):
-        return len(self._entries)
-
-    def __getitem__(self, key):
-        return CatelogSubsetEntry(**self._entries[key])
-
-    def __str__(self):
-        return str(self._entries)
-
-class CatelogSubsetEntry(object):
-    def __init__(self, item, color_id, quantity, extra_quantity, is_alternate, is_counterpart):
-        self.quantity = quantity
-        self.extra_quantity = extra_quantity
-        self.is_alternate = is_alternate
-        self.color_id = color_id
-        self.is_counterpart = is_counterpart
-        self.item = CatelogItem(**item)
-
-    def __str__(self):
-        return "%s and extra %s of %s in color %s" % (self.quantity, self.extra_quantity, self.item, self.color_id)
-
 class BricklinkApi(object):
+    """
+    Class represents the Bricklink (https://bricklink.com) API
+    """
+
+    """ The Bricklink API end-point """
     BRICKLINK_URL = "https://api.bricklink.com/api/store/v1"
 
     def _perform_get_request(self, url):
@@ -104,6 +28,13 @@ class BricklinkApi(object):
 
     def __init__(self, oauth_consumer_key, oauth_consumer_secret,
                  oauth_access_token, oauth_access_token_secret):
+        """
+        Creates object which allows commands to the Bricklink API
+        :param oauth_consumer_key: The Consumer key provided by Bricklink
+        :param oauth_consumer_secret: The Consumer secret provided by Bricklink
+        :param oauth_access_token: The Access Token provided by Bricklink
+        :param oauth_access_token_secret: The Access Token Secret provided by Bricklink
+        """
         self._oauth = OAuth1(
             oauth_consumer_key,
             oauth_consumer_secret,
@@ -111,25 +42,132 @@ class BricklinkApi(object):
             oauth_access_token_secret
         )
 
-    def getCatelogItem(self, type, no):
-        data = self._perform_get_request(
+    def getCatalogItem(self, type, no):
+        """
+        Returns information about the specified item in the Bricklink catalog
+        :param type: The type of item. Acceptable values are:
+                        MINIFIG, PART, SET, BOOK, GEAR, CATALOG, INSTRUCTION, UNSORTED_LOT, ORIGINAL_BOX
+        :param no: Identification number of the item
+        :return: If the call is successful it returns a catalog item with the following data structure:
+            {
+                'item':  {
+                    'no': string,
+                    'name': string,
+                    'type': string (MINIFIG, PART, SET, BOOK, GEAR, CATALOG, INSTRUCTION, UNSORTED_LOT, ORIGINAL_BOX),
+                    'category_id': integer
+                },
+                'alternate_no': string,
+                'image_url': string,
+                thumbnail_url': string,
+                'weight': fixed point number (2 decimals),
+                'dim_x': string (2 decimals),
+                'dim_y': string (2 decimals),
+                'dim_z': string (2 decimals),
+                'year_released': integer,
+                'description': string,
+                'is_obsolete': boolean,
+                'language_code': string
+            }
+        """
+        return self._perform_get_request(
             self.BRICKLINK_URL + "/items/%s/%s" % (type, no))
-        return CatelogItem(**data)
 
     def getCatelogItemImage(self, type, no, color_id):
-        data = self._perform_get_request(
+        """
+        Returns the image URL of the specified item by color
+        :param type: The type of item. Acceptable values are:
+                        MINIFIG, PART, SET, BOOK, GEAR, CATALOG, INSTRUCTION, UNSORTED_LOT, ORIGINAL_BOX
+        :param no: Identification number of the item
+        :param color_id: Bricklink color id
+        :return: If the call is successful it returns a catalog item with the following data structure
+            {
+                'color_id': integer,
+                'thumbnail_url': string,
+                'type': string (MINIFIG, PART, SET, BOOK, GEAR, CATALOG, INSTRUCTION, UNSORTED_LOT, ORIGINAL_BOX),
+                'no': string
+            }
+        """
+        return self._perform_get_request(
             self.BRICKLINK_URL + "/items/%s/%s/images/%d" % (type, no, color_id))
-        return CatelogItem(**data)
 
     def getCatelogSupersets(self, type, no, color_id = None):
+        """
+        Returns a list of items that included the specified item
+        :param type: The type of item. Acceptable values are:
+                        MINIFIG, PART, SET, BOOK, GEAR, CATALOG, INSTRUCTION, UNSORTED_LOT, ORIGINAL_BOX
+        :param no: Identification number of the item
+        :param color_id: (Optional) Bricklink color id
+        :return: If the call is successful it returns a list of superset entries with the following data structure:
+            [
+                {
+                    'color_id': integer,
+                    'entries': [
+                        {
+                            'quantity': integer,
+                            'appears_as': string (A: Alternate, C: Counterpart, E: Extra, R: Regular),
+                            'item'  => {
+                                'no': string,
+                                'name': string,
+                                'type': string (MINIFIG, PART, SET, BOOK, GEAR, CATALOG, INSTRUCTION, UNSORTED_LOT, ORIGINAL_BOX),
+                                'category_id': integer
+                            }
+                        },
+                        {
+                            etc...
+                        }
+                    ]
+                },
+                {
+                    etc...
+                }
+            ]
+        """
         url = self.BRICKLINK_URL + "/items/%s/%s/supersets" % (type, no)
         if color_id is not None:
             url += "?color_id=%d" % (color_id)
 
-        return CatelogSupersetEntriesList(self._perform_get_request(url))
+        return self._perform_get_request(url)
 
     def getCatelogSubsets(self, type, no, color_id = None, box = None, instruction = None,
                           break_minifigs = None, break_subsets = None):
+        """
+        Returns a list of items that are included in the specified item
+        :param type: The type of item. Acceptable values are:
+                        MINIFIG, PART, SET, BOOK, GEAR, CATALOG, INSTRUCTION, UNSORTED_LOT, ORIGINAL_BOX
+        :param no: Identification number of the item
+        :param color_id: (Optional) Bricklink color id
+        :param box: (Optional) Indicates whether the set includes the original box
+        :param instruction: (Optional) Indicates whether the set includes the original instruction
+        :param break_minifigs: (Optional) Indicates whether the result breaks down minifigs as parts
+        :param break_subsets: (Optional) Indicates whether the result breaks down sub sets as parts
+        :return: If the call is successful it returns a list of subset entries with the following data structure:
+            [
+                {
+                    'match_no': integer,
+                    'entries': [
+                        {
+                            'color_id': integer,
+                            'quantity': integer,
+                            'extra_quantity': integer,
+                            'is_alternate': boolean,
+                            'is_counterpart': boolean,
+                            'item': {
+                                'no': string,
+                                'name': string,
+                                'type': string (MINIFIG, PART, SET, BOOK, GEAR, CATALOG, INSTRUCTION, UNSORTED_LOT, ORIGINAL_BOX),
+                                'category_id': integer
+                            }
+                        },
+                        {
+                            etc...
+                        }
+                    ]
+                },
+                {
+                    etc...
+                }
+            ]
+        """
         url = self.BRICKLINK_URL + "/items/%s/%s/subsets" % (type, no)
 
         optional_params = []
@@ -146,4 +184,4 @@ class BricklinkApi(object):
 
         url += "?%s" % ("&".join(optional_params))
 
-        return CatelogSubsetEntries(self._perform_get_request(url))
+        return self._perform_get_request(url)
