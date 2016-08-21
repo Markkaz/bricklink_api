@@ -312,3 +312,20 @@ class BricklinkApi(object):
             }
         """
         return self._requester.get("/colors/%s" % color_id)
+
+    def getCategoryList(self):
+        """
+        Retrieves a list of all categories defined in the Bricklink catalog
+        :return: If the call is successful it returns a list Bricklink catalog categories in the following data structure:
+            [
+                {
+                    'category_id': integer,
+                    'category_name': string,
+                    'category_parent': integer (0 is root)
+                },
+                {
+                    etc...
+                }
+            ]
+        """
+        return self._requester.get("/categories")
