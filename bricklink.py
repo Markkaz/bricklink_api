@@ -11,25 +11,28 @@ class BricklinkException(Exception):
     def __str__(self):
         return "%d - %s: %s" % (self.code, self.message, self.description)
 
-class BricklinkApi(object):
-    """
-    Class represents the Bricklink (https://bricklink.com) API
-    """
-
-    """ The Bricklink API end-point """
+class BricklinkRequester(object):
+    """ Helper class which performs the actual REST calls to Bricklink """
     BRICKLINK_URL = "https://api.bricklink.com/api/store/v1"
 
-    def _perform_get_request(self, url):
-        response = requests.get(url, auth=self._oauth).json()
+    def _parse_optional_params(self, **optional):
+        optional_params = []
+        for key, value in optional.items():
+            if value:
+                optional_params.append("%s=%s" % (key, str(value)))
+
+        return "?%s" % ("&".join(optional_params))
+
+    def _parse_response(self, response):
         if response['meta']['code'] != 200:
             raise BricklinkException(**response['meta'])
-        data = response['data']
-        return data
+
+        return response['data']
 
     def __init__(self, oauth_consumer_key, oauth_consumer_secret,
                  oauth_access_token, oauth_access_token_secret):
         """
-        Creates object which allows commands to the Bricklink API
+        Creates object which allows authenticated REST calls to Bricklink
         :param oauth_consumer_key: The Consumer key provided by Bricklink
         :param oauth_consumer_secret: The Consumer secret provided by Bricklink
         :param oauth_access_token: The Access Token provided by Bricklink
@@ -41,6 +44,31 @@ class BricklinkApi(object):
             oauth_access_token,
             oauth_access_token_secret
         )
+
+    def get(self, path, **optional):
+        """
+        Performs a GET REST call to the Bricklink API
+        :param path: The Bricklink API path
+        :param optional: All optional parameters that neesd to be passed to Bricklink
+        :return: BricklinkException when request failed, otherwise the parsed JSON from the API
+        """
+        response = requests.get(
+            self.BRICKLINK_URL + path + self._parse_optional_params(**optional),
+            auth=self._oauth
+        ).json()
+
+        return self._parse_response(response)
+
+class BricklinkApi(object):
+    """
+    Class represents the Bricklink (https://bricklink.com) API
+    """
+    def __init__(self, requester):
+        """
+        Creates object which allows commands to the Bricklink API
+        :param requester: Helper object that performs the actual REST calls to the Bricklink API
+        """
+        self.requester = requester
 
     def getCatalogItem(self, type, no):
         """
@@ -69,8 +97,7 @@ class BricklinkApi(object):
                 'language_code': string
             }
         """
-        return self._perform_get_request(
-            self.BRICKLINK_URL + "/items/%s/%s" % (type, no))
+        return self.requester.get("/items/%s/%s" % (type, no))
 
     def getCatalogItemImage(self, type, no, color_id):
         """
@@ -87,8 +114,7 @@ class BricklinkApi(object):
                 'no': string
             }
         """
-        return self._perform_get_request(
-            self.BRICKLINK_URL + "/items/%s/%s/images/%d" % (type, no, color_id))
+        return self.requester.get("/items/%s/%s/images/%d" % (type, no, color_id))
 
     def getCatalogSupersets(self, type, no, color_id = None):
         """
@@ -122,11 +148,9 @@ class BricklinkApi(object):
                 }
             ]
         """
-        url = self.BRICKLINK_URL + "/items/%s/%s/supersets" % (type, no)
-        if color_id is not None:
-            url += "?color_id=%d" % (color_id)
-
-        return self._perform_get_request(url)
+        return self.requester.get(
+            "/items/%s/%s/supersets" % (type, no),
+            color_id=color_id)
 
     def getCatalogSubsets(self, type, no, color_id = None, box = None, instruction = None,
                           break_minifigs = None, break_subsets = None):
@@ -168,23 +192,14 @@ class BricklinkApi(object):
                 }
             ]
         """
-        url = self.BRICKLINK_URL + "/items/%s/%s/subsets" % (type, no)
-
-        optional_params = []
-        if color_id:
-            optional_params.append("color_id=%d" % color_id)
-        if box:
-            optional_params.append("box=%r" % box)
-        if instruction:
-            optional_params.append("instruction=%r" % instruction)
-        if break_minifigs:
-            optional_params.append("break_minifigs=%r" % break_minifigs)
-        if break_subsets:
-            optional_params.append("break_subsets=%r" % break_subsets)
-
-        url += "?%s" % ("&".join(optional_params))
-
-        return self._perform_get_request(url)
+        return self.requester.get(
+            "/items/%s/%s/subsets" % (type, no),
+            box=box,
+            break_minifigs=break_minifigs,
+            break_subsets=break_subsets,
+            color_id=color_id,
+            instruction=instruction
+        )
 
     def getCatalogPriceGuide(self, type, no, color_id = None, guide_type = None, new_or_used = None,
                              country_code = None, region = None, currency_code = None, vat = None):
@@ -237,24 +252,12 @@ class BricklinkApi(object):
                 ]
             }
         """
-        url = self.BRICKLINK_URL + "/items/%s/%s/price" % (type, no)
-
-        optional_params = []
-        if color_id:
-            optional_params.append("color_id=%d" % color_id)
-        if guide_type:
-            optional_params.append("guide_type=%s" % guide_type)
-        if new_or_used:
-            optional_params.append("new_or_used=%s" % new_or_used)
-        if country_code:
-            optional_params.append("country_code=%s" % country_code)
-        if region:
-            optional_params.append("region=%s" % region)
-        if currency_code:
-            optional_params.append("currency_code=%s" % currency_code)
-        if vat:
-            optional_params.append("vat=%s" % vat)
-
-        url += "?%s" % ("&".join(optional_params))
-
-        return self._perform_get_request(url)
+        return self.requester.get("/items/%s/%s/price" % (type, no),
+                         color_id=color_id,
+                         guide_type=guide_type,
+                         new_or_used=new_or_used,
+                         country_code=country_code,
+                         region=region,
+                         currency_code=currency_code,
+                         vat=vat
+         )
