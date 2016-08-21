@@ -65,6 +65,33 @@ class CatelogSupersetEntriesList(object):
     def __getitem__(self, key):
         return CatelogSuperSetEntries(self._items[key])
 
+class CatelogSubsetEntries(object):
+    def __init__(self, entries):
+        self._entries = []
+        for entry in entries:
+            self._entries += entry['entries']
+
+    def __len__(self):
+        return len(self._entries)
+
+    def __getitem__(self, key):
+        return CatelogSubsetEntry(**self._entries[key])
+
+    def __str__(self):
+        return str(self._entries)
+
+class CatelogSubsetEntry(object):
+    def __init__(self, item, color_id, quantity, extra_quantity, is_alternate, is_counterpart):
+        self.quantity = quantity
+        self.extra_quantity = extra_quantity
+        self.is_alternate = is_alternate
+        self.color_id = color_id
+        self.is_counterpart = is_counterpart
+        self.item = CatelogItem(**item)
+
+    def __str__(self):
+        return "%s and extra %s of %s in color %s" % (self.quantity, self.extra_quantity, self.item, self.color_id)
+
 class BricklinkApi(object):
     BRICKLINK_URL = "https://api.bricklink.com/api/store/v1"
 
@@ -94,9 +121,29 @@ class BricklinkApi(object):
             self.BRICKLINK_URL + "/items/%s/%s/images/%d" % (type, no, color_id))
         return CatelogItem(**data)
 
-    def getSupersets(self, type, no, color_id = None):
+    def getCatelogSupersets(self, type, no, color_id = None):
         url = self.BRICKLINK_URL + "/items/%s/%s/supersets" % (type, no)
         if color_id is not None:
             url += "?color_id=%d" % (color_id)
 
         return CatelogSupersetEntriesList(self._perform_get_request(url))
+
+    def getCatelogSubsets(self, type, no, color_id = None, box = None, instruction = None,
+                          break_minifigs = None, break_subsets = None):
+        url = self.BRICKLINK_URL + "/items/%s/%s/subsets" % (type, no)
+
+        optional_params = []
+        if color_id:
+            optional_params.append("color_id=%d" % color_id)
+        if box:
+            optional_params.append("box=%r" % box)
+        if instruction:
+            optional_params.append("instruction=%r" % instruction)
+        if break_minifigs:
+            optional_params.append("break_minifigs=%r" % break_minifigs)
+        if break_subsets:
+            optional_params.append("break_subsets=%r" % break_subsets)
+
+        url += "?%s" % ("&".join(optional_params))
+
+        return CatelogSubsetEntries(self._perform_get_request(url))
