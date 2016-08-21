@@ -329,3 +329,16 @@ class BricklinkApi(object):
             ]
         """
         return self._requester.get("/categories")
+
+    def getCategory(self, category_id):
+        """
+        Retrieves information about a specific Bricklink catalog category
+        :param category_id: The bricklink category ID
+        :return: If the call is successful it returns information about a category in the following data structure:
+            {
+                'category_id': integer,
+                'category_name': string,
+                'category_parent': integer (0 is root)
+            }
+        """
+        return self._requester.get("/categories/%d" % category_id)
