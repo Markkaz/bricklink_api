@@ -298,3 +298,17 @@ class BricklinkApi(object):
             ]
         """
         return self._requester.get("/colors")
+
+    def getColor(self, color_id):
+        """
+        Retrieves information about a specific Bricklink color
+        :param color_id: The Bricklink color id
+        :return: If the call is successful it returns color information in the following data structure:
+            {
+                'color_id': integer,
+                'color_name': string,
+                'color_code': string,
+                'color_type': string
+            }
+        """
+        return self._requester.get("/colors/%s" % color_id)
