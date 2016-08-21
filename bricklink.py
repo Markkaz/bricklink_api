@@ -68,7 +68,7 @@ class BricklinkApi(object):
         Creates object which allows commands to the Bricklink API
         :param requester: Helper object that performs the actual REST calls to the Bricklink API
         """
-        self.requester = requester
+        self._requester = requester
 
     def getCatalogItem(self, type, no):
         """
@@ -97,7 +97,7 @@ class BricklinkApi(object):
                 'language_code': string
             }
         """
-        return self.requester.get("/items/%s/%s" % (type, no))
+        return self._requester.get("/items/%s/%s" % (type, no))
 
     def getCatalogItemImage(self, type, no, color_id):
         """
@@ -114,7 +114,7 @@ class BricklinkApi(object):
                 'no': string
             }
         """
-        return self.requester.get("/items/%s/%s/images/%d" % (type, no, color_id))
+        return self._requester.get("/items/%s/%s/images/%d" % (type, no, color_id))
 
     def getCatalogSupersets(self, type, no, color_id = None):
         """
@@ -148,7 +148,7 @@ class BricklinkApi(object):
                 }
             ]
         """
-        return self.requester.get(
+        return self._requester.get(
             "/items/%s/%s/supersets" % (type, no),
             color_id=color_id)
 
@@ -192,7 +192,7 @@ class BricklinkApi(object):
                 }
             ]
         """
-        return self.requester.get(
+        return self._requester.get(
             "/items/%s/%s/subsets" % (type, no),
             box=box,
             break_minifigs=break_minifigs,
@@ -252,12 +252,31 @@ class BricklinkApi(object):
                 ]
             }
         """
-        return self.requester.get("/items/%s/%s/price" % (type, no),
-                         color_id=color_id,
-                         guide_type=guide_type,
-                         new_or_used=new_or_used,
-                         country_code=country_code,
-                         region=region,
-                         currency_code=currency_code,
-                         vat=vat
-         )
+        return self._requester.get("/items/%s/%s/price" % (type, no),
+                                   color_id=color_id,
+                                   guide_type=guide_type,
+                                   new_or_used=new_or_used,
+                                   country_code=country_code,
+                                   region=region,
+                                   currency_code=currency_code,
+                                   vat=vat
+                                   )
+
+    def getCatalogKnownColors(self, type, no):
+        """
+        Returns currently known colors of the item
+        :param type: The type of item. Acceptable values are:
+                        MINIFIG, PART, SET, BOOK, GEAR, CATALOG, INSTRUCTION, UNSORTED_LOT, ORIGINAL_BOX
+        :param no: Identification number of the item
+        :return: If the call is successful it returns a list of known colors with the following data structure:
+            [
+                {
+                    'color_id': integer,
+                    'quantity': integer
+                },
+                {
+                    etc...
+                }
+            ]
+        """
+        return self._requester.get("/items/%s/%s/colors" % (type, no))
