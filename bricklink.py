@@ -280,3 +280,21 @@ class BricklinkApi(object):
             ]
         """
         return self._requester.get("/items/%s/%s/colors" % (type, no))
+
+    def getColorList(self):
+        """
+        Retrieves a list of colors defined in the Bricklink catalog
+        :return: A list of defined colors with the following data structure:
+            [
+                {
+                    'color_id': integer,
+                    'color_name': string,
+                    'color_code': string,
+                    'color_type': string
+                },
+                {
+                    etc...
+                }
+            ]
+        """
+        return self._requester.get("/colors")
