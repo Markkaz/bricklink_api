@@ -342,3 +342,48 @@ class BricklinkApi(object):
             }
         """
         return self._requester.get("/categories/%d" % category_id)
+
+    def getElementId(self, type, no):
+        """
+        Retrieves Part-color-code (A.K.A. element id) of a specificed item
+        :param type: The type of item. Acceptable values: PART
+        :param no: Identification number of the item
+        :return: If the call is successful it returns a list of item mapping resources in the following data structure:
+            [
+                {
+                    'item': {
+                        'no': string,
+                        'type': string (PART)
+                    },
+                    'color_id': integer,
+                    'color_name': string,
+                    'element_id': string
+                },
+                {
+                    etc...
+                }
+            ]
+        """
+        return self._requester.get("/item_mapping/%s/%s" % (type, no))
+
+    def getItemNumber(self, element_id):
+        """
+        Retrieves a BL Catalog item number by Part-color-code (A.K.A. element id)
+        :param element_id: Element ID of the item in a specified color
+        :return: If the call is successful it returns a list of item mapping resources in the following data structure:
+            [
+                {
+                    'item': {
+                        'no': string,
+                        'type': string (PART)
+                    },
+                    'color_id': integer,
+                    'color_name': string,
+                    'element_id': string
+                },
+                {
+                    etc...
+                }
+            ]
+        """
+        return self._requester.get("/item_mapping/%s" % element_id)
