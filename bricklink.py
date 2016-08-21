@@ -72,7 +72,7 @@ class BricklinkApi(object):
         return self._perform_get_request(
             self.BRICKLINK_URL + "/items/%s/%s" % (type, no))
 
-    def getCatelogItemImage(self, type, no, color_id):
+    def getCatalogItemImage(self, type, no, color_id):
         """
         Returns the image URL of the specified item by color
         :param type: The type of item. Acceptable values are:
@@ -90,7 +90,7 @@ class BricklinkApi(object):
         return self._perform_get_request(
             self.BRICKLINK_URL + "/items/%s/%s/images/%d" % (type, no, color_id))
 
-    def getCatelogSupersets(self, type, no, color_id = None):
+    def getCatalogSupersets(self, type, no, color_id = None):
         """
         Returns a list of items that included the specified item
         :param type: The type of item. Acceptable values are:
@@ -128,7 +128,7 @@ class BricklinkApi(object):
 
         return self._perform_get_request(url)
 
-    def getCatelogSubsets(self, type, no, color_id = None, box = None, instruction = None,
+    def getCatalogSubsets(self, type, no, color_id = None, box = None, instruction = None,
                           break_minifigs = None, break_subsets = None):
         """
         Returns a list of items that are included in the specified item
@@ -181,6 +181,79 @@ class BricklinkApi(object):
             optional_params.append("break_minifigs=%r" % break_minifigs)
         if break_subsets:
             optional_params.append("break_subsets=%r" % break_subsets)
+
+        url += "?%s" % ("&".join(optional_params))
+
+        return self._perform_get_request(url)
+
+    def getCatalogPriceGuide(self, type, no, color_id = None, guide_type = None, new_or_used = None,
+                             country_code = None, region = None, currency_code = None, vat = None):
+        """
+        Returns the price statistics of the specified item
+        :param type: The type of item. Acceptable values are:
+                        MINIFIG, PART, SET, BOOK, GEAR, CATALOG, INSTRUCTION, UNSORTED_LOT, ORIGINAL_BOX
+        :param no: Identification number of the item
+        :param color_id: (Optional) Bricklink color id
+        :param guide_type: (Optional) Indicates which statistics should be provided. Acceptable values are:
+                            "sold": get the price statistics of "Last 6 months sales"
+                            "stock": get the price statistics of "Current items for sale" (default)
+        :param new_or_used: (Optional) Indicates the condition of the items that are included in the statistics.
+                            Acceptable values are:
+                                "N": new item (default), "U": used item
+        :param country_code: (Optional) The result includes only items in stores which are located in the specified country
+        :param region: (Optional) The result includes only items in stores which are located in the specified region
+        :param currency_code: (Optional) The currency in which prices should be returned
+        :param vat: (Optional) Indicates that price will include VAT for items from VAT enabled stores.
+                    Acceptable values are: "N": exclude VAT (default), "Y": include VAT
+        :return: If the call is successful it returns a price guide resource with the following data structure:
+            {
+                'item': {
+                    'no': string,
+                    'type': string (MINIFIG, PART, SET, BOOK, GEAR, CATALOG, INSTRUCTION, UNSORTED_LOT, ORIGINAL_BOX)
+                },
+                'new_or_used': string (N: New, U: Used)
+                'currency_code': string,
+                'min_price': fixed point number (4 decimals),
+                'max_price': fixed point number (4 decimals),
+                'avg_price': fixed point number (4 decimals),
+                'qty_avg_price': fixed_point_number (4 decimals),
+                'unit_quantity': integer,
+                'total_quantity': integer,
+                'price_detail': [
+                    {
+                        'quantity': integer,
+                        'unit_price': fixed point number (4 decimals),
+                        'shipping_available': string
+                            __OR__
+                        'quantity': integer,
+                        'unit_price': integer,
+                        'seller_country_code': string,
+                        'buyer_country_code': string,
+                        'date_ordered': timestamp
+                    },
+                    {
+                        etc...
+                    }
+                ]
+            }
+        """
+        url = self.BRICKLINK_URL + "/items/%s/%s/price" % (type, no)
+
+        optional_params = []
+        if color_id:
+            optional_params.append("color_id=%d" % color_id)
+        if guide_type:
+            optional_params.append("guide_type=%s" % guide_type)
+        if new_or_used:
+            optional_params.append("new_or_used=%s" % new_or_used)
+        if country_code:
+            optional_params.append("country_code=%s" % country_code)
+        if region:
+            optional_params.append("region=%s" % region)
+        if currency_code:
+            optional_params.append("currency_code=%s" % currency_code)
+        if vat:
+            optional_params.append("vat=%s" % vat)
 
         url += "?%s" % ("&".join(optional_params))
 
